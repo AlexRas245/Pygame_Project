@@ -2,7 +2,7 @@ import pygame
 import sys
 from Button import Button
 import рейтинг
-
+import Game
 class MainMenu:
     def __init__(self, screen, width, height):
         self.screen = screen
@@ -162,7 +162,12 @@ class MainMenu:
             self.exit_button = Button(screen, None, 325, 350, 150, 35, self.exit_menu, image=self.exit_button_image)
 
     def start_game(self):
-        pass
+        game = Game.Game(self.screen, self.width, self.height, self.user_text, self.music_on)
+        game.run()
+        if game.return_to_menu:  # Проверяем флаг возврата в меню
+            if pygame.mixer.music.get_busy() != self.music_on:
+                self.music()
+            self.draw()
 
     def show_rating(self):
         rating_menu = рейтинг.RatingMenu(self.screen, self.width, self.height, self.music_on)
