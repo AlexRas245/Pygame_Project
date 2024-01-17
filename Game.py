@@ -1,6 +1,9 @@
 import pygame
 from Button import Button
 import random
+import time
+from рейтинг import RatingMenu
+
 
 class FifteenPuzzle:
     def __init__(self, rows, cols):
@@ -40,6 +43,7 @@ class FifteenPuzzle:
                 self.tiles[self.empty_row][self.empty_col]
             self.empty_row, self.empty_col = row, col
 
+
 class PuzzleRenderer:
     def __init__(self, screen, puzzle, cell_size, center_x, center_y):
         self.screen = screen
@@ -75,6 +79,7 @@ class PuzzleRenderer:
     def update(self):
         pygame.display.flip()
 
+
 class Game:
     def __init__(self, screen, width, height, player_name, music_on):
         self.screen = screen
@@ -88,9 +93,9 @@ class Game:
         self.player_name = player_name
         if len(self.player_name) == 0:
             self.player_name = 'Player'
-        self.background_image = pygame.image.load("three.jpg").convert() # Изображение для фона
+        self.background_image = pygame.image.load("three.jpg").convert()  # Изображение для фона
         self.background_image = pygame.transform.scale(self.background_image, (width, height))
-        self.menu_button_image = pygame.image.load("home.png").convert_alpha() # Изображение для кнопки "В меню"
+        self.menu_button_image = pygame.image.load("home.png").convert_alpha()  # Изображение для кнопки "В меню"
         self.menu_button_image = pygame.transform.scale(self.menu_button_image, (40, 40))
         self.menu_button = Button(screen, None, 10, 10, 50, 50, self.go_to_menu, image=self.menu_button_image)
         self.puzzle = FifteenPuzzle(4, 4)  # Размер поля 4x4
@@ -108,6 +113,9 @@ class Game:
             self.music_button = Button(screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_on)
         else:
             self.music_button = Button(screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_off)
+        self.start_time = time.time()
+        self.moves = 0
+        self.db = RatingMenu(self.screen, self.width, self.height, self.music_on)
 
     def music(self):
         if self.music_on:
@@ -124,19 +132,92 @@ class Game:
     def go_to_menu(self):
         self.return_to_menu = True
 
+    def record_victory(self):
+        # Записываем информацию о победе в базу данных
+        self.db.record_victory(self.player_name, self.moves, round(time.time() - self.start_time, 2))
+
+    def handle_mouse_click(self, pos):
+        # Пересчитываем координаты в индексы пятнашки
+        row = (pos[1] - self.renderer.start_y) // self.renderer.cell_size
+        col = (pos[0] - self.renderer.start_x + 100) // self.renderer.cell_size
+        # Проверяем, можно ли переместить пятнашку
+        if 0 <= row < self.puzzle.rows and 0 <= col < self.puzzle.cols:
+            if self.is_valid_move(row, col):
+                # Перемещаем пятнашку
+                self.move_sound.play()
+                self.puzzle.move_tile(row, col)
+                self.moves += 1
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Обработка левого клика мыши
+                # Получаем координаты мыши
+                pos = pygame.mouse.get_pos()
+                self.handle_mouse_click(pos)
+                # Проверка, было ли нажатие на кнопку "В меню"
+                if self.menu_button.rect.collidepoint(pos):
+                    self.click_sound.play()
+                    self.return_to_menu = True
+                if self.music_button.rect.collidepoint(pos):
+                    self.music()
+
+    def is_valid_move(self, row, col):
+        # Проверка, можно ли переместить пятнашку в указанную позицию
+        return (
+                (abs(row - self.puzzle.empty_row) == 1 and col == self.puzzle.empty_col) or
+                (abs(col - self.puzzle.empty_col) == 1 and row == self.puzzle.empty_row)
+        )
+
+    def display_victory_message(self):
+        self.record_victory()
+        victory_font = pygame.font.Font('Ubuntu-Medium.ttf', 60)
+        victory_text = victory_font.render(f"Вы победили!", True, (0, 0, 0))
+        text_rect = victory_text.get_rect(center=(self.width // 2, self.height // 2))
+        self.screen.blit(victory_text, text_rect)
+        # Добавляем информацию о времени и ходах
+        elapsed_time = round(time.time() - self.start_time, 2)
+        info_text = f"Время: {elapsed_time} сек., Ходы: {self.moves}"
+        info_font = pygame.font.Font('Ubuntu-Medium.ttf', 36)
+        info_render = info_font.render(info_text, True, (0, 0, 0))
+        info_rect = info_render.get_rect(center=(self.width // 2, self.height // 2 + 60))
+        self.screen.blit(info_render, info_rect)
+        pygame.display.flip()
+
     def draw(self):
         self.screen.blit(self.background_image, (0, 0))
         self.renderer.draw()  # Отрисовываем пятнашки
         self.menu_button.draw()
         self.music_button.draw()
+        # Преобразование секунд в формат MM:SS
+        elapsed_time = time.strftime("%M:%S", time.gmtime(round(time.time() - self.start_time)))
+        # Отображение информации о времени, ходах и игроке
+        info_text = f"Игрок: {self.player_name}\nХоды: {self.moves}\nВремя: {elapsed_time}"
+        info_font = pygame.font.Font('Ubuntu-Medium.ttf', 32)
+        left_padding = 500
+        max_lines = 5  # Максимальное количество строк для отображения
+        info_rect = pygame.Rect(0, 0, 0, 0)
+        for i, line in enumerate(info_text.splitlines()):
+            if i < max_lines:
+                if len(line) > 17:
+                    line = line[:15] + '...'
+                line_render = info_font.render(line, True, (255, 255, 255))
+                line_rect = line_render.get_rect(topleft=(left_padding, 50 + i * 40))
+                self.screen.blit(line_render, line_rect)
+                info_rect.width = max(info_rect.width, line_rect.width)
+                info_rect.height += line_rect.height
         pygame.display.flip()
 
     def update(self):
+        self.handle_events()
         if self.return_to_menu:
             self.running = False
         self.renderer.update()
         if self.puzzle.is_solved():
             self.running = False
+            self.display_victory_message()
+
     def run(self):
         while self.running:
             self.update()

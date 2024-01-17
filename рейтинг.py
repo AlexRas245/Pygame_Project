@@ -51,6 +51,7 @@ class RatingMenu:
             )
         ''')
         self.update_rating()
+
     def music(self):
         if self.music_on:
             pygame.mixer.music.pause()
@@ -73,6 +74,7 @@ class RatingMenu:
                ORDER BY games_played DESC
            ''')
         self.rating_data = self.cursor.fetchall()
+
     def get_player_id(self, player_name):
         # Получаем id игрока по его имени
         self.cursor.execute('''
@@ -83,6 +85,7 @@ class RatingMenu:
             return result[0]
         else:
             return None
+
     def get_top_games_played(self, num_players=5):
         # Получить топ игроков по количеству сыгранных игр
         self.cursor.execute('''
@@ -94,6 +97,7 @@ class RatingMenu:
         ''')
         top_players = self.cursor.fetchmany(num_players)
         return top_players
+
     def get_top_speed_run(self, num_players=5):
         # Получить топ игроков по скорости прохождения
         self.cursor.execute('''
@@ -105,6 +109,7 @@ class RatingMenu:
         ''')
         top_players = self.cursor.fetchmany(num_players)
         return top_players
+
     def draw(self):
         self.screen.blit(self.background_image, (0, 0))
         self.menu_button.draw()  # Отрисовка кнопки "В меню"
@@ -118,7 +123,7 @@ class RatingMenu:
         self.draw_text("#", (230, 225, 215), self.width // 4 - 80, 370)
         self.draw_text("Никнейм", (230, 225, 215), self.width // 2, 370)
         self.draw_text("Лучшее время", (230, 225, 215), self.width * 3 // 4 + 80, 370)
-        top_games_played = self.get_top_games_played() # Получение топов
+        top_games_played = self.get_top_games_played()  # Получение топов
         top_speed_run = self.get_top_speed_run()
         # Отрисовка топа по количеству игр
         row_height = 30
@@ -133,11 +138,13 @@ class RatingMenu:
             self.draw_text(nickname, (0, 0, 0), self.width // 2, start_y + i * row_height)
             self.draw_text(str(round(games_played, 2)), (0, 0, 0), self.width * 3 // 4 + 80, start_y + i * row_height)
         pygame.display.flip()
+
     def draw_text(self, text, color, x, y):
         text_surface = self.font.render(text, True, color)
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x, y)
         self.screen.blit(text_surface, text_rect)
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -150,13 +157,38 @@ class RatingMenu:
                 elif self.music_button.rect.collidepoint(pos):
                     self.music_button.command()
 
+    def increment_games_played(self, player_id):
+        # Увеличиваем счетчик игр для указанного игрока
+        self.cursor.execute('''
+            UPDATE players 
+            SET games_played = games_played + 1 
+            WHERE id = ?
+        ''', (player_id,))
+        self.conn.commit()
+
+    def record_victory(self, player_name, moves, time):
+        # Проверяем, есть ли игрок в базе данных, если нет - добавляем
+        self.cursor.execute('''
+                    INSERT OR IGNORE INTO players (nickname) VALUES (?)
+                ''', (player_name,))
+        # Записываем информацию о победе в базу данных
+        self.cursor.execute('''
+                    INSERT INTO games (player_id, moves, time)
+                    VALUES ((SELECT id FROM players WHERE nickname = ?), ?, ?)
+                ''', (player_name, moves, time))
+        player_id = self.get_player_id(player_name)  # Получаем id игрока
+        self.increment_games_played(player_id)  # Увеличиваем счетчик игр для этого игрока
+        self.conn.commit()
+
     def update(self):
         self.handle_events()
         if self.back_to_menu:
             self.running = False
         pygame.display.flip()
+
     def go_to_menu(self):
         self.back_to_menu = True
+
     def run(self):
         while self.running:
             self.update()
