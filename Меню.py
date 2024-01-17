@@ -3,6 +3,8 @@ import sys
 from Button import Button
 import рейтинг
 import Game
+
+
 class MainMenu:
     def __init__(self, screen, width, height):
         self.screen = screen
@@ -33,7 +35,7 @@ class MainMenu:
             "music_off.png").convert_alpha()  # Изображение когда музыка не играет
         self.music_button_image_off = pygame.transform.scale(self.music_button_image_off, (40, 40))
         # Создаем кнопку "Музыка" с изображением
-        self.music_button = Button(screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_on)
+        self.music_button = Button(self.screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_on)
         # Загружаем изображение для кнопки "Начать"
         self.start_button_image = pygame.image.load("start.png").convert_alpha()
         self.start_button_image = pygame.transform.scale(self.start_button_image, (150, 40))
@@ -131,35 +133,38 @@ class MainMenu:
     def music(self):
         if self.music_on:
             pygame.mixer.music.pause()
-            self.music_button = Button(screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_off)
+            self.music_button = Button(self.screen, None, 740, 550, 790, 600, self.music,
+                                       image=self.music_button_image_off)
             self.music_on = False
         else:
             pygame.mixer.music.unpause()
-            self.music_button = Button(screen, None, 740, 550, 790, 600, self.music, image=self.music_button_image_on)
+            self.music_button = Button(self.screen, None, 740, 550, 790, 600, self.music,
+                                       image=self.music_button_image_on)
             self.music_on = True
 
     def start_button_active(self, flag):
         if flag:
-            self.start_button = Button(screen, None, 325, 250, 150, 35, self.start_game,
+            self.start_button = Button(self.screen, None, 325, 250, 150, 35, self.start_game,
                                        image=self.start_button_image_active)
         else:
-            self.start_button = Button(screen, None, 325, 250, 150, 35, self.start_game,
+            self.start_button = Button(self.screen, None, 325, 250, 150, 35, self.start_game,
                                        image=self.start_button_image)
 
     def rating_button_active(self, flag):
         if flag:
-            self.rating_button = Button(screen, None, 325, 300, 150, 35, self.show_rating,
+            self.rating_button = Button(self.screen, None, 325, 300, 150, 35, self.show_rating,
                                         image=self.rating_button_image_active)
         else:
-            self.rating_button = Button(screen, None, 325, 300, 150, 35, self.show_rating,
+            self.rating_button = Button(self.screen, None, 325, 300, 150, 35, self.show_rating,
                                         image=self.rating_button_image)
 
     def exit_button_active(self, flag):
         if flag:
-            self.exit_button = Button(screen, None, 325, 350, 150, 35, self.exit_menu,
+            self.exit_button = Button(self.screen, None, 325, 350, 150, 35, self.exit_menu,
                                       image=self.exit_button_image_active)
         else:
-            self.exit_button = Button(screen, None, 325, 350, 150, 35, self.exit_menu, image=self.exit_button_image)
+            self.exit_button = Button(self.screen, None, 325, 350, 150, 35, self.exit_menu,
+                                      image=self.exit_button_image)
 
     def start_game(self):
         game = Game.Game(self.screen, self.width, self.height, self.user_text, self.music_on)
@@ -177,23 +182,8 @@ class MainMenu:
                 self.music()
             self.draw()
 
-    def exit_menu(self):
+    @staticmethod
+    def exit_menu():
         pygame.mixer.quit()
         pygame.quit()
         sys.exit()
-
-
-pygame.init()
-screen = pygame.display.set_mode((800, 600))
-menu = MainMenu(screen, 800, 600)
-
-clock = pygame.time.Clock()
-
-running = True
-while running:
-    menu.update()
-    menu.draw()
-    clock.tick(60)
-
-pygame.quit()
-sys.exit()

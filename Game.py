@@ -5,6 +5,7 @@ import time
 from рейтинг import RatingMenu
 from random import randint
 
+
 class FifteenPuzzle:
     def __init__(self, rows, cols):
         self.rows = rows
@@ -76,7 +77,8 @@ class PuzzleRenderer:
                     self.screen.blit(image, image_rect)
         self.screen.blit(self.ramka_image, (start_x - 35, start_y - 35))
 
-    def update(self):
+    @staticmethod
+    def update():
         pygame.display.flip()
 
 
@@ -201,6 +203,7 @@ class Game:
             self.draw_fireworks_particles(fireworks_particles)
             pygame.display.flip()
             pygame.time.delay(45)  # Задержка между кадрами анимации
+
     def generate_fireworks_particles(self):
         particles = []
         for _ in range(200):  # Количество частиц салюта
@@ -213,7 +216,9 @@ class Game:
             }
             particles.append(particle)
         return particles
-    def update_fireworks_particles(self, particles):
+
+    @staticmethod
+    def update_fireworks_particles(particles):
         for particle in particles:
             particle['x'] += particle['speed_x']
             particle['y'] += particle['speed_y']
@@ -223,6 +228,7 @@ class Game:
     def draw_fireworks_particles(self, particles):
         for particle in particles:
             pygame.draw.circle(self.screen, particle['color'], (int(particle['x']), int(particle['y'])), 2)
+
     def draw(self):
         self.screen.blit(self.background_image, (0, 0))
         self.renderer.draw()  # Отрисовываем пятнашки
