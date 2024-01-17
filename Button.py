@@ -10,7 +10,7 @@ class Button:
         self.width = width
         self.height = height
         self.command = command
-        self.image = image  # Добавляем аргумент для изображения
+        self.image = image
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.color = pygame.Color('lightskyblue3')
         self.active = False
