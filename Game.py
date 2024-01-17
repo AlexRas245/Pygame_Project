@@ -3,7 +3,7 @@ from Button import Button
 import random
 import time
 from рейтинг import RatingMenu
-
+from random import randint
 
 class FifteenPuzzle:
     def __init__(self, rows, cols):
@@ -184,7 +184,45 @@ class Game:
         info_rect = info_render.get_rect(center=(self.width // 2, self.height // 2 + 60))
         self.screen.blit(info_render, info_rect)
         pygame.display.flip()
+        # Анимация салюта
+        fireworks_particles = self.generate_fireworks_particles()
+        fireworks_start_time = pygame.time.get_ticks()
 
+        while pygame.time.get_ticks() - fireworks_start_time < 3000:  # Ожидание 3 секунды
+            self.update_fireworks_particles(fireworks_particles)
+            self.draw_fireworks_particles(fireworks_particles)
+            pygame.display.flip()
+            pygame.time.delay(45)
+
+    def run_fireworks_animation(self):
+        fireworks_particles = self.generate_fireworks_particles()
+        for _ in range(100):  # Количество частиц салюта
+            self.update_fireworks_particles(fireworks_particles)
+            self.draw_fireworks_particles(fireworks_particles)
+            pygame.display.flip()
+            pygame.time.delay(45)  # Задержка между кадрами анимации
+    def generate_fireworks_particles(self):
+        particles = []
+        for _ in range(200):  # Количество частиц салюта
+            particle = {
+                'x': randint(0, self.width),
+                'y': randint(0, self.height),
+                'color': (randint(0, 255), randint(0, 255), randint(0, 255)),
+                'speed_x': randint(-5, 5),
+                'speed_y': randint(-5, 5)
+            }
+            particles.append(particle)
+        return particles
+    def update_fireworks_particles(self, particles):
+        for particle in particles:
+            particle['x'] += particle['speed_x']
+            particle['y'] += particle['speed_y']
+            particle['speed_y'] += 0.1
+            particle['color'] = tuple(max(0, min(255, c + randint(-10, 10))) for c in particle['color'])
+
+    def draw_fireworks_particles(self, particles):
+        for particle in particles:
+            pygame.draw.circle(self.screen, particle['color'], (int(particle['x']), int(particle['y'])), 2)
     def draw(self):
         self.screen.blit(self.background_image, (0, 0))
         self.renderer.draw()  # Отрисовываем пятнашки
