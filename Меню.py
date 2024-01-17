@@ -1,7 +1,7 @@
 import pygame
 import sys
 from Button import Button
-
+import рейтинг
 
 class MainMenu:
     def __init__(self, screen, width, height):
@@ -72,7 +72,7 @@ class MainMenu:
         self.draw_text(self.text_nick, (0, 0, 0), self.input_rect.left - 130, self.input_rect.centery - 20)
         pygame.draw.rect(self.screen, self.color, self.input_rect, 2)  # Отрисовка поля ввода никнейма
         # Ограничиваем длину текста, который будет отображаться
-        displayed_text = self.user_text[-7:]  # Ограничиваем до последних 9 символов
+        displayed_text = self.user_text[-7:]  # Ограничиваем до последних 7 символов
         text_surface = self.font.render(displayed_text, True, (0, 0, 0))
         text_rect = text_surface.get_rect()
         text_rect.center = self.input_rect.center
@@ -165,7 +165,8 @@ class MainMenu:
         pass
 
     def show_rating(self):
-        pass
+        rating_menu = рейтинг.RatingMenu(self.screen, self.width, self.height, self.music_on)
+        rating_menu.run()
 
     def exit_menu(self):
         pygame.mixer.quit()
