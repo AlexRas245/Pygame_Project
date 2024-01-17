@@ -50,6 +50,7 @@ class RatingMenu:
                 FOREIGN KEY(player_id) REFERENCES players(id)
             )
         ''')
+        self.update_rating()
     def music(self):
         if self.music_on:
             pygame.mixer.music.pause()
@@ -61,12 +62,82 @@ class RatingMenu:
             self.music_button = Button(self.screen, None, 740, 550, 790, 600, self.music,
                                        image=self.music_button_image_on)
             self.music_on = True
+
+    def update_rating(self):
+        # Получение рейтинга игроков из базы данных
+        self.cursor.execute('''
+               SELECT players.nickname, COUNT(games.id) as games_played
+               FROM players
+               LEFT JOIN games ON players.id = games.player_id
+               GROUP BY players.id
+               ORDER BY games_played DESC
+           ''')
+        self.rating_data = self.cursor.fetchall()
+    def get_player_id(self, player_name):
+        # Получаем id игрока по его имени
+        self.cursor.execute('''
+            SELECT id FROM players WHERE nickname = ?
+        ''', (player_name,))
+        result = self.cursor.fetchone()
+        if result:
+            return result[0]
+        else:
+            return None
+    def get_top_games_played(self, num_players=5):
+        # Получить топ игроков по количеству сыгранных игр
+        self.cursor.execute('''
+            SELECT players.nickname, COUNT(games.id) as games_played
+            FROM players
+            LEFT JOIN games ON players.id = games.player_id
+            GROUP BY players.id
+            ORDER BY games_played DESC
+        ''')
+        top_players = self.cursor.fetchmany(num_players)
+        return top_players
+    def get_top_speed_run(self, num_players=5):
+        # Получить топ игроков по скорости прохождения
+        self.cursor.execute('''
+            SELECT players.nickname, AVG(games.time) as avg_time
+            FROM players
+            JOIN games ON players.id = games.player_id
+            GROUP BY players.id
+            ORDER BY avg_time ASC
+        ''')
+        top_players = self.cursor.fetchmany(num_players)
+        return top_players
     def draw(self):
         self.screen.blit(self.background_image, (0, 0))
         self.menu_button.draw()  # Отрисовка кнопки "В меню"
         self.music_button.draw()
+        header_text = "Топ по количеству игр"  # Отрисовка заголовка таблицы
+        self.draw_text(header_text, (255, 0, 0), self.width // 2, 50)
+        self.draw_text("#", (230, 225, 215), self.width // 4 - 80, 100)
+        self.draw_text("Никнейм", (230, 225, 215), self.width // 2, 100)
+        self.draw_text("Количество игр", (230, 225, 215), self.width * 3 // 4 + 80, 100)
+        self.draw_text("Топ по времени", (255, 0, 0), self.width // 2, 320)
+        self.draw_text("#", (230, 225, 215), self.width // 4 - 80, 370)
+        self.draw_text("Никнейм", (230, 225, 215), self.width // 2, 370)
+        self.draw_text("Лучшее время", (230, 225, 215), self.width * 3 // 4 + 80, 370)
+        top_games_played = self.get_top_games_played() # Получение топов
+        top_speed_run = self.get_top_speed_run()
+        # Отрисовка топа по количеству игр
+        row_height = 30
+        start_y = 140
+        for i, (nickname, games_played) in enumerate(top_games_played):
+            self.draw_text(str(i + 1), (0, 0, 0), self.width // 4 - 80, start_y + i * row_height)
+            self.draw_text(nickname, (0, 0, 0), self.width // 2, start_y + i * row_height)
+            self.draw_text(str(games_played), (0, 0, 0), self.width * 3 // 4 + 80, start_y + i * row_height)
+        start_y = 410
+        for i, (nickname, games_played) in enumerate(top_speed_run):
+            self.draw_text(str(i + 1), (0, 0, 0), self.width // 4 - 80, start_y + i * row_height)
+            self.draw_text(nickname, (0, 0, 0), self.width // 2, start_y + i * row_height)
+            self.draw_text(str(round(games_played, 2)), (0, 0, 0), self.width * 3 // 4 + 80, start_y + i * row_height)
         pygame.display.flip()
-
+    def draw_text(self, text, color, x, y):
+        text_surface = self.font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
