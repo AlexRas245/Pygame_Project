@@ -167,6 +167,10 @@ class MainMenu:
     def show_rating(self):
         rating_menu = рейтинг.RatingMenu(self.screen, self.width, self.height, self.music_on)
         rating_menu.run()
+        if rating_menu.back_to_menu:  # Проверяем флаг возврата в меню
+            if pygame.mixer.music.get_busy() != self.music_on:
+                self.music()
+            self.draw()
 
     def exit_menu(self):
         pygame.mixer.quit()
