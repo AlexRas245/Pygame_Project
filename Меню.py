@@ -10,6 +10,13 @@ class MainMenu:
         self.height = height
         self.font = pygame.font.Font('Ubuntu-Medium.ttf', 28)
         self.music_on = True
+        self.active = False
+        self.text_nick = 'Введите никнейм:'
+        self.user_text = ''
+        self.input_rect = pygame.Rect(self.width // 2 - 75, self.height // 6 - 20, 150, 30)
+        self.color_active = pygame.Color('lightskyblue3')
+        self.color_passive = pygame.Color('chartreuse4')
+        self.color = self.color_passive
         pygame.display.set_caption("Пятнашки")
         self.background_image = pygame.image.load("three_menu.png").convert_alpha()  # изображение для фона
         self.background_image = pygame.transform.scale(self.background_image, (width, height))
@@ -58,6 +65,18 @@ class MainMenu:
         self.start_button.draw()
         self.rating_button.draw()
         self.exit_button.draw()
+        if self.active:
+            self.color = self.color_active
+        else:
+            self.color = self.color_passive
+        self.draw_text(self.text_nick, (0, 0, 0), self.input_rect.left - 130, self.input_rect.centery - 20)
+        pygame.draw.rect(self.screen, self.color, self.input_rect, 2)  # Отрисовка поля ввода никнейма
+        # Ограничиваем длину текста, который будет отображаться
+        displayed_text = self.user_text[-7:]  # Ограничиваем до последних 9 символов
+        text_surface = self.font.render(displayed_text, True, (0, 0, 0))
+        text_rect = text_surface.get_rect()
+        text_rect.center = self.input_rect.center
+        self.screen.blit(text_surface, text_rect)
         pygame.display.flip()
 
     def handle_events(self):
@@ -66,17 +85,21 @@ class MainMenu:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.input_rect.collidepoint(event.pos):
+                    self.active = True
+                else:
+                    self.active = False
                 # Проверяем нажатие на кнопку
                 pos = pygame.mouse.get_pos()
-                if self.music_button.check_click(pos):# Кнопка Музыка
+                if self.music_button.check_click(pos):  # Кнопка Музыка
                     self.music_button.command()
-                elif self.start_button.check_click(pos): # Кнопка Начать
+                elif self.start_button.check_click(pos):  # Кнопка Начать
                     self.click_sound.play()
                     self.start_button.command()
-                elif self.rating_button.check_click(pos):# Кнопка Рейтинг
+                elif self.rating_button.check_click(pos):  # Кнопка Рейтинг
                     self.click_sound.play()
                     self.rating_button.command()
-                elif self.exit_button.check_click(pos):# Кнопка Выйти
+                elif self.exit_button.check_click(pos):  # Кнопка Выйти
                     self.exit_button.command()
             if event.type == pygame.MOUSEMOTION:
                 pos = pygame.mouse.get_pos()
@@ -92,6 +115,18 @@ class MainMenu:
                     self.exit_button_active(True)
                 else:
                     self.exit_button_active(False)
+            if event.type == pygame.KEYDOWN:
+                if self.active:
+                    if event.key == pygame.K_BACKSPACE:
+                        self.user_text = self.user_text[:-1]
+                    else:
+                        self.user_text += event.unicode
+
+    def draw_text(self, text, color, x, y):
+        text_surface = self.font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
 
     def music(self):
         if self.music_on:
